@@ -22,6 +22,10 @@ class Stock:
     p_choice = 0    #default 1 Year    
     param_choice = None   #param choice default none
 
+
+    #time step
+    time_step = None
+
     # Dow Jones
     param_dji = {
         'q': ".DJI", # Stock symbol (ex: "AAPL")
@@ -48,10 +52,11 @@ class Stock:
 
     params = [param_dji,param_aapl,param_fb]
 
-    def __init__(self,param_choice,i_choice,p_choice):
+    def __init__(self,param_choice,i_choice,p_choice,time_step=30):
         self.i_choice = i_choice
         self.p_choice = p_choice
         self.param_choice = self.params[param_choice]
+        self.time_step = time_step
 
     def print(self):
         print(self.i_choice)
@@ -63,14 +68,13 @@ class Stock:
 
         stocks = np.matrix(df.values)
 
-        x = np.matrix(df['Open'].values).transpose()
-        y = np.matrix(df['Close'].values).transpose()
-
-        #number of data elements
-        len = x.shape[0]
+        close = np.matrix(df['Close'].values).transpose()
         
+        #number of data elements
+        len = close.shape[0]
+
         #sequence size
-        sequence = 60
+        sequence = self.time_step
 
         #finding how many can we make
         row = int(len/sequence)
@@ -79,11 +83,12 @@ class Stock:
         remainder = len - (sequence * row)
 
         #now deleting the first 'remainder' number of rows
-        x = np.delete(x, np.s_[:remainder]).transpose()
-        y = np.delete(y, np.s_[:remainder]).transpose()
+        close = np.delete(close, np.s_[:remainder]).transpose()
 
-        return x,y
+        a = np.reshape(close,(1,np.shape(close)[0]))
 
+        close = np.reshape(close,(row,self.time_step))
+        
+        close = np.split(close,2)
 
-#TODO make the X,Y by just using close values
-
+        return close[0],close[1]

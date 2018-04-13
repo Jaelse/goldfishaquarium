@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 import stock as st
 import rnn_configuration as configurations
+import matplotlib.pyplot as plt
 
 class StoPreC:
     tf.reset_default_graph
@@ -20,10 +21,10 @@ class StoPreC:
     targets = None
 
     #inputs
-    inputs = tf.placeholder(tf.float32, [None,60,1])
+    inputs = tf.placeholder(tf.float64, [None,60,1])
 
     #target
-    targets = tf.placeholder(tf.float32, [None,1])
+    targets = tf.placeholder(tf.float64, [None,60,1])
 
     #train_op
     train_op = None
@@ -35,8 +36,8 @@ class StoPreC:
     accuracy = None
 
     #units -> number of units this cell
-    def lstm_cell(self,units):
-        return tf.nn.rnn_cell.LSTMCell(units)
+    def lstm_cell(self,units,name="brain"):
+        return tf.nn.rnn_cell.LSTMCell(units,name="brain_"+name)
 
 
     def __init__(self,config,Data):
@@ -46,23 +47,23 @@ class StoPreC:
         
         self.config = config
 
-        self.Weights = tf.Variable(tf.random_normal([config.lstm_units_per_cell[len(config.lstm_units_per_cell)-1],config.input_size]))
-        self.biases = tf.Variable(tf.random_normal([config.lstm_units_per_cell[len(config.lstm_units_per_cell)-1]]))
+        self.Weights = tf.Variable(tf.random_normal([config.lstm_units_per_cell[len(config.lstm_units_per_cell)-1],config.input_size],dtype=tf.float64,name="Weights"))
+        self.biases = tf.Variable(tf.random_normal([config.lstm_units_per_cell[len(config.lstm_units_per_cell)-1]],dtype=tf.float64),name="baises")
 
         #input
-        self.inputs = tf.placeholder(tf.float32, [None,config.time_steps,config.input_size])
+        self.inputs = tf.placeholder(tf.float64, [None,config.time_steps,config.input_size])
 
         #target
-        self.targets = tf.placeholder(tf.float32, [None,config.input_size])     
+        self.targets = tf.placeholder(tf.float64, [None,config.time_steps,config.input_size])     
 
-        self.brain = tf.nn.rnn_cell.MultiRNNCell([self.lstm_cell(config.lstm_units_per_cell[i]) for i in range(config.num_layers)], state_is_tuple=True) if config.num_layers > 1 else lstm_cell(units[0])
+        self.brain = tf.nn.rnn_cell.MultiRNNCell([self.lstm_cell(config.lstm_units_per_cell[i],str(i)) for i in range(config.num_layers)], state_is_tuple=True) if config.num_layers > 1 else self.lstm_cell(config.lstm_units_per_cell[0],"0")
 
         #train
         self.train()
 
     def brain_work(self,x,weights,biases):
         # Get lstm cell output
-        outputs, _ = tf.nn.dynamic_rnn(self.brain, x, dtype=tf.float32)
+        outputs, _ = tf.nn.dynamic_rnn(self.brain, x, dtype=tf.float64)
 
         #transpose to make it good for multiplication
         outputs = tf.transpose(outputs, [1,0,2])
@@ -78,23 +79,25 @@ class StoPreC:
         logits = self.brain_work(self.inputs, self.Weights, self.biases)
         prediction = tf.nn.softmax(logits)
 
+        target = tf.reshape(self.targets,(tf.shape(self.targets)[0],tf.shape(self.targets)[1]))
+
         # Define loss and optimizer
-        loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
-            logits=logits, labels=self.targets))
+        self.loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+            logits=logits, labels=target))
     
         optimizer = tf.train.GradientDescentOptimizer(0.99)
     
-        train_op = optimizer.minimize(loss_op)
+        self.train_op = optimizer.minimize(self.loss_op)
 
         # Evaluate model (with test logits, for dropout to be disabled)
         correct_pred = tf.equal(tf.argmax(prediction, 1), tf.argmax(self.targets, 1))
-        accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+        self.accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
     def put_it_to_life(self):
         # Start training
         with tf.Session() as sess:
             merged_summary = tf.summary.merge_all()
-            writer = tf.summary.FileWriter("/tmp/goldfish_tesorboard/1", sess.graph)
+            writer = tf.summary.FileWriter("/tmp/goldfish_tesorboard/2", sess.graph)
             writer.add_graph(sess.graph)
 
             # Run the initializer
@@ -103,17 +106,18 @@ class StoPreC:
         #TODO make batches
             for step in range(1, 10):
                 open_st,close_st = self.Data.get_data()
-                open_st = np.reshape(open_st,(int(open_st.shape[0]/60),60,1))
-                close_st = np.reshape(close_st,(int(close_st.shape[0]/60),60,1))
 
-                batch_x = tf.convert_to_tensor(open_st, tf.float32)
-                batch_y = tf.convert_to_tensor(close_st, tf.float32)
+                batch_x = tf.convert_to_tensor(open_st, tf.float64)
+                batch_y = tf.convert_to_tensor(close_st, tf.float64)
+
+                batch_x = tf.reshape(batch_x,(tf.shape(batch_x)[0],tf.shape(batch_x)[1],1))    
+                batch_y = tf.reshape(batch_y,(tf.shape(batch_y)[0],tf.shape(batch_y)[1],1))    
 
                 # Run optimization op (backprop)
-                sess.run(self.train_op, feed_dict={self.inputs: batch_x, self.targets: batch_y})
+                sess.run(self.train_op, feed_dict={self.inputs: batch_x.eval(), self.targets: batch_y.eval()})
                 #if step % display_step == 0 or step == 1:
                 # Calculate batch loss and accuracy
-                loss, acc = sess.run([self.loss_op, self.accuracy], feed_dict={self.inputs: batch_x, self.targets: batch_y})
+                loss, acc = sess.run([self.loss_op, self.accuracy], feed_dict={self.inputs: batch_x.eval(), self.targets: batch_y.eval()})
                 
                 #print("Step " + str(step) + ", Minibatch Loss= " + \ "{:.4f}".format(loss) + ", Training Accuracy= " + \ "{:.3f}".format(acc))
 
@@ -128,10 +132,12 @@ class StoPreC:
 
 
 #Rnn cofigurations
-configs = configurations.Configurations(input_size=1,time_steps=30,num_layers=2,lstm_units_per_cell=[10,5],batch_size=60,init_learning_rate=0.001,learning_rate_decay=0.99,max_epoch=1000)
+configs = configurations.Configurations(input_size=1,time_steps=30,num_layers=1,lstm_units_per_cell=[30],batch_size=60,init_learning_rate=0.001,learning_rate_decay=0.99,max_epoch=1000)
 
 #Dataset
-Data = st.Stock(1,1,1)
+Data = st.Stock(1,1,1,configs.time_steps)
+
+inputs, targets = Data.get_data()
 
 creature = StoPreC(configs,Data)       
 
