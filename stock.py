@@ -83,29 +83,7 @@ class Stock:
                 targets.append(np.matrix.tolist(for_targets))
             else:    
                 break
-        #     for_input = close[]
-
-        # #number of data elements
-        # len = close.shape[0]
-
-        # #sequence size
-        # sequence = self.time_step
-
-        # #finding how many can we make
-        # row = int(len/sequence)
-
-        # #number of rows to remove
-        # remainder = len - (sequence * row)
-
-        #spliting to have for input and target
-        # close = np.split(close,2)
-
-        # #now deleting the first 'remainder' number of rows
-        # close = np.delete(close, np.s_[:remainder]).transpose()
-
-
-
-        # close = np.reshape(close,(row,self.time_step))
+        
         inputs = np.reshape(inputs,(np.shape(inputs)[0],np.shape(inputs)[2]))
         targets = np.reshape(targets,(np.shape(targets)[0],np.shape(targets)[2]))
         
