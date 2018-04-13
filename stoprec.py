@@ -6,34 +6,6 @@ import matplotlib.pyplot as plt
 
 class StoPreC:
     tf.reset_default_graph
-    brain = None
-    
-    Weights = None
-    biases = None
-
-    #TODO make it that it can be initiated from outside
-    Data = None
-
-    #configurations
-    config = None
-    
-
-    targets = None
-
-    #inputs
-    inputs = tf.placeholder(tf.float64, [None,60,1])
-
-    #target
-    targets = tf.placeholder(tf.float64, [None,60,1])
-
-    #train_op
-    train_op = None
-
-    #loss_op
-    loss_op = None
-
-    #accuracy
-    accuracy = None
 
     #units -> number of units this cell
     def lstm_cell(self,units,name="brain"):
