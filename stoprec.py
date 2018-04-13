@@ -45,6 +45,7 @@ class StoPreC:
         #dataset
         self.Data = Data
         
+        #configurations for this object
         self.config = config
 
         self.Weights = tf.Variable(tf.random_normal([config.lstm_units_per_cell[len(config.lstm_units_per_cell)-1],config.input_size],dtype=tf.float64,name="Weights"))
@@ -64,7 +65,8 @@ class StoPreC:
     def brain_work(self,x,weights,biases):
         # Get lstm cell output
         outputs, _ = tf.nn.dynamic_rnn(self.brain, x, dtype=tf.float64)
-
+        
+        #before transpose shape (time_step,batch_size,input_size)
         #transpose to make it good for multiplication
         outputs = tf.transpose(outputs, [1,0,2])
 
@@ -135,7 +137,7 @@ class StoPreC:
 configs = configurations.Configurations(input_size=1,time_steps=30,num_layers=1,lstm_units_per_cell=[30],batch_size=60,init_learning_rate=0.001,learning_rate_decay=0.99,max_epoch=1000)
 
 #Dataset
-Data = st.Stock(1,1,1,configs.time_steps)
+Data = st.Stock(1,1,1,configs.time_steps,configs.lstm_units_per_cell[len(configs.lstm_units_per_cell)-1])
 
 inputs, targets = Data.get_data()
 

@@ -52,43 +52,61 @@ class Stock:
 
     params = [param_dji,param_aapl,param_fb]
 
-    def __init__(self,param_choice,i_choice,p_choice,time_step=30):
+    def __init__(self,param_choice,i_choice,p_choice,time_step=30,last_cell_states=10):
         self.i_choice = i_choice
         self.p_choice = p_choice
         self.param_choice = self.params[param_choice]
         self.time_step = time_step
-
-    def print(self):
-        print(self.i_choice)
-        print(self.p_choice)
-        print(self.param_choice)
+        self.last_cell_states = last_cell_states
 
     def get_data(self):
         df = get_price_data(self.param_choice)
 
-        stocks = np.matrix(df.values)
-
         close = np.matrix(df['Close'].values).transpose()
+
+        for_input = np.reshape(close[0:30],(1,30))
+
+        i = 0
+        inputs = []
+        targets = []
+
+        len = np.shape(close)[0]
         
-        #number of data elements
-        len = close.shape[0]
+        can_make_set = True
 
-        #sequence size
-        sequence = self.time_step
+        while(can_make_set):
+            if  i+self.time_step+self.last_cell_states < len:
+                for_input = np.reshape(close[i:i+self.time_step],(1,self.time_step))
+                inputs.append(np.matrix.tolist(for_input))
+                i = i+self.time_step
+                for_targets = np.reshape(close[i:i+self.last_cell_states],(1,self.last_cell_states))
+                targets.append(np.matrix.tolist(for_targets))
+            else:    
+                break
+        #     for_input = close[]
 
-        #finding how many can we make
-        row = int(len/sequence)
+        # #number of data elements
+        # len = close.shape[0]
 
-        #number of rows to remove
-        remainder = len - (sequence * row)
+        # #sequence size
+        # sequence = self.time_step
 
-        #now deleting the first 'remainder' number of rows
-        close = np.delete(close, np.s_[:remainder]).transpose()
+        # #finding how many can we make
+        # row = int(len/sequence)
 
-        a = np.reshape(close,(1,np.shape(close)[0]))
+        # #number of rows to remove
+        # remainder = len - (sequence * row)
 
-        close = np.reshape(close,(row,self.time_step))
+        #spliting to have for input and target
+        # close = np.split(close,2)
+
+        # #now deleting the first 'remainder' number of rows
+        # close = np.delete(close, np.s_[:remainder]).transpose()
+
+
+
+        # close = np.reshape(close,(row,self.time_step))
+        inputs = np.reshape(inputs,(np.shape(inputs)[0],np.shape(inputs)[2]))
+        targets = np.reshape(targets,(np.shape(targets)[0],np.shape(targets)[2]))
         
-        close = np.split(close,2)
-
-        return close[0],close[1]
+        return inputs,targets
