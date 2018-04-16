@@ -84,6 +84,8 @@ class LstmRnn(object):
                     training_loss, _ = sess.run([loss, minimize], train_data_feed)
 
                 # Test
+                print(self.data_set.test_y)
+                print(self.data_set.test_y.shape)
                 test_loss, _pred = sess.run([loss, prediction], test_data_feed)
 
                 # Print Train and Test
@@ -102,15 +104,17 @@ if __name__ == '__main__':
             time_steps=3,
             num_layers=1,
             lstm_units_per_cell=[10],
-            batch_size=5,
+            batch_size=1,
             init_learning_rate=0.01,
             learning_rate_decay=0.99,
             max_epoch=50
             )
     configs.init_epoch = 5
-    data_set = st.Stock(1, 4,
-            configs.lstm_units_per_cell[len(configs.lstm_units_per_cell)-1],
-            configs)
+    params = 2 # 0Dow Jones, 1Apple, 2Facebook
+    intervals = 3 # 0sec, 1minute, 2hour, 3day, 4month.
+    period = 0 # 0year, 1month, 2day
+
+    data_set = st.Stock(params, intervals, period, configs)
 
     Xtrain, ytrain, Xtest, ytest = data_set.get_data()
 
