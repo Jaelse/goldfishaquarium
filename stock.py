@@ -4,9 +4,13 @@ from googlefinance.client import get_price_data, get_prices_data, get_prices_tim
 
 
 class Stock:
-        
-    #intervals 
-    #sec=60, minute=60*60, hour=60*60*60, day=60*60*60*24, week=60*60*60*24*7, month=60*60*60*24*30
+    # intervals:
+    #     minute=60*60
+    #     sec=60
+    #     hour=60*60*60
+    #     day=60*60*60*24
+    #     week=60*60*60*24*7
+    #     month=60*60*60*24*30
     
     sec = str(60)
     minute = str(sec*60)
@@ -15,13 +19,12 @@ class Stock:
     week = str(day*7)
     month = str(day*30)
 
-    intervals = [sec,minute,hour,day,month]
-    period = ["1Y","1M","1D"]
+    intervals = [sec, minute, hour, day, month]
+    period = ["1Y", "1M", "1D"]
 
     i_choice = 0    #default 1 sec
     p_choice = 0    #default 1 Year    
     param_choice = None   #param choice default none
-
 
     #time step
     time_step = None
@@ -50,41 +53,41 @@ class Stock:
         'p': period[p_choice] # Period (Ex: "1Y" = 1 year)
     }
 
-    params = [param_dji,param_aapl,param_fb]
+    params = [param_dji, param_aapl, param_fb]
 
-    def __init__(self,param_choice,i_choice,p_choice,time_step=30,last_cell_states=10):
-        self.i_choice = i_choice
-        self.p_choice = p_choice
+    def __init__(self,
+            param_choice, interval_choice,
+            period_choice,
+            configs,
+            last_cell_states=10):
+        self.i_choice = interval_choice
+        self.p_choice = period_choice
         self.param_choice = self.params[param_choice]
-        self.time_step = time_step
+        self.time_step = configs.time_steps
+        self.input_size = configs.input_size
         self.last_cell_states = last_cell_states
 
     def get_data(self):
         df = get_price_data(self.param_choice)
 
-        close = np.matrix(df['Close'].values).transpose()
+        seq = np.matrix(df['Close'].values).transpose()
+        seq = [float(np.array(i)) for i in seq]
 
-        for_input = np.reshape(close[0:30],(1,30))
+        seq = [np.array(seq[i * self.input_size: (i + 1) * self.input_size]) for i in range(len(seq) // self.input_size)]
 
-        i = 0
-        inputs = []
-        targets = []
+        # Split into groups of `num_steps`
+        X = np.array([seq[i: i + self.time_step] for i in range(len(seq) - self.time_step)])
+        y = np.array([seq[i + self.time_step] for i in range(len(seq) - self.time_step)])
+        return X, y
 
-        len = np.shape(close)[0]
-        
-        can_make_set = True
+    def generate_one_epoch(self, batch_size):
+        X, y = self.get_data()
+        num_batches = int(len(X)) // batch_size
+        if batch_size * num_batches < len(X):
+            num_batches += 1
 
-        while(can_make_set):
-            if  i+self.time_step+self.last_cell_states < len:
-                for_input = np.reshape(close[i:i+self.time_step],(1,self.time_step))
-                inputs.append(np.matrix.tolist(for_input))
-                i = i+self.time_step
-                for_targets = np.reshape(close[i:i+self.last_cell_states],(1,self.last_cell_states))
-                targets.append(np.matrix.tolist(for_targets))
-            else:    
-                break
-        
-        inputs = np.reshape(inputs,(np.shape(inputs)[0],np.shape(inputs)[2]))
-        targets = np.reshape(targets,(np.shape(targets)[0],np.shape(targets)[2]))
-        
-        return inputs,targets
+        batch_indices = range(num_batches)
+        for j in batch_indices:
+            batch_X = X[j * batch_size: (j+1) * batch_size]
+            batch_y = y[j * batch_size: (j+1) * batch_size]
+            yield  np.array( batch_X ), np.array( batch_y )
