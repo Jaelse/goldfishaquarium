@@ -78,16 +78,22 @@ class Stock:
         # Split into groups of `num_steps`
         X = np.array([seq[i: i + self.time_step] for i in range(len(seq) - self.time_step)])
         y = np.array([seq[i + self.time_step] for i in range(len(seq) - self.time_step)])
-        return X, y
+
+        train_size = len(X) - len(X)//20;
+
+        self.train_X, self.test_X = X[:train_size], X[train_size:]
+        self.train_y, self.test_y = y[:train_size], y[train_size:]
+
+        return self.train_X, self.train_y, self.test_X, self.test_y
 
     def generate_one_epoch(self, batch_size):
-        X, y = self.get_data()
-        num_batches = int(len(X)) // batch_size
-        if batch_size * num_batches < len(X):
+        train_X, train_y, test_x, test_y = self.get_data()
+        num_batches = int(len(train_X)) // batch_size
+        if batch_size * num_batches < len(train_X):
             num_batches += 1
 
         batch_indices = range(num_batches)
         for j in batch_indices:
-            batch_X = X[j * batch_size: (j+1) * batch_size]
-            batch_y = y[j * batch_size: (j+1) * batch_size]
+            batch_X = train_X[j * batch_size: (j+1) * batch_size]
+            batch_y = train_y[j * batch_size: (j+1) * batch_size]
             yield  np.array( batch_X ), np.array( batch_y )

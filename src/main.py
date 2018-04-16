@@ -6,10 +6,12 @@ import matplotlib.pyplot as plt
 
 
 class LstmRnn(object):
-    def __init__(self, configs, data_set):
+    def __init__(self, configs, data_set, model_path="../model/model"):
+        super(LstmRnn, self).__init__()
+
         self.configs = configs
         self.data_set = data_set
-        super(LstmRnn, self).__init__()
+        self.model_path = model_path 
         
     def _create_cell(self, units_per_cell, name="didn't name"):
         return tf.nn.rnn_cell.LSTMCell(units_per_cell, state_is_tuple=True, name=name)
@@ -52,11 +54,17 @@ class LstmRnn(object):
             loss = tf.reduce_mean(tf.square(prediction - targets))
             optimizer = tf.train.RMSPropOptimizer(learning_rate)
             minimize = optimizer.minimize(loss)
+            merged_summary = tf.summary.merge_all()
 
-    # def train(self):
-    #     configs = self.configs
         with tf.Session(graph = lstm_graph) as sess:
             tf.global_variables_initializer().run()
+
+            test_data_feed = {
+                    inputs: self.data_set.test_X,
+                    targets: self.data_set.test_y,
+                    learning_rate: 0.0
+                    }
+
             learning_rates_to_use = [
                     configs.init_learning_rate * (
                         configs.learning_rate_decay ** max(float(i + 1 - configs.init_epoch), 0.0)
@@ -65,6 +73,8 @@ class LstmRnn(object):
             for epoch_step in range(configs.max_epoch):
                 current_learning_rate = learning_rates_to_use[epoch_step]
                 self.data_set.generate_one_epoch(configs.batch_size)
+
+                # Train
                 for batch_X, batch_y in self.data_set.generate_one_epoch(configs.batch_size):
                     train_data_feed = {
                             inputs: batch_X,
@@ -72,10 +82,18 @@ class LstmRnn(object):
                             learning_rate: current_learning_rate
                             }
                     training_loss, _ = sess.run([loss, minimize], train_data_feed)
-                print( "epoch: %d | training loss: %f" 
-                        % ( epoch_step, training_loss ) )
+
+                # Test
+                test_loss, _pred = sess.run([loss, prediction], test_data_feed)
+
+                # Print Train and Test
+                # print("final prediction: "+str(_pred.shape))
+                print(np.concatenate((_pred, self.data_set.test_y), axis=1))
+                print( "epoch: %d | training loss: %f | test loss: %f" % ( epoch_step, training_loss, test_loss ) )
+            
+            print("Saving model to: "+self.model_path)
             saver = tf.train.Saver()
-            saver.save(sess, "../model/model", global_step=configs.max_epoch)
+            saver.save(sess, self.model_path, global_step=configs.max_epoch)
 
 if __name__ == '__main__':
     # Rnn cofigurations
@@ -87,10 +105,10 @@ if __name__ == '__main__':
             batch_size=5,
             init_learning_rate=0.01,
             learning_rate_decay=0.99,
-            max_epoch=5
+            max_epoch=50
             )
     configs.init_epoch = 5
-    data_set = st.Stock(1, 1,
+    data_set = st.Stock(1, 4,
             configs.lstm_units_per_cell[len(configs.lstm_units_per_cell)-1],
             configs)
 
