@@ -50,32 +50,44 @@ class Stock:
         self.get_data()
 
     def get_data(self):
+        print(self.param_choice)
         df = get_price_data(self.param_choice)
 
-        close = np.matrix(df['Close'].values).transpose()
+        seq = np.matrix(df['Close'].values).transpose()
+        seq = [float(np.array(i)) for i in seq]
 
-        for_input = np.reshape(close[0:30],(1,30))
+        seq = [np.array(seq[i * self.input_size: (i + 1) * self.input_size]) for i in range(len(seq) // self.input_size)]
 
-        i = 0
-        inputs = []
-        targets = []
+        # Split into groups of `num_steps`
 
-        len = np.shape(close)[0]
+        X = np.array([seq[i: i + self.time_step] for i in range(len(seq) - self.time_step)])
+        y = np.array([seq[i + self.time_step] for i in range(len(seq) - self.time_step)])
+
+        normalize = False
+        normalize = True
+        if normalize:
+            normFactorX = np.mean(X)
+            normFactory = np.mean(y)
+            X = X / normFactorX
+            y = y / normFactory
+
+        train_size = len(X) - len(X)//20;
+
+
+        self.train_X, self.test_X = X[:train_size], X[train_size:]
+        self.train_y, self.test_y = y[:train_size], y[train_size:]
         
-        can_make_set = True
+        return self.train_X, self.train_y, self.test_X, self.test_y
 
-        while(can_make_set):
-            if  i+self.time_step+1 < len:
-                for_input = np.reshape(close[i:i+self.time_step],(1,self.time_step))
-                inputs.append(np.matrix.tolist(for_input))
-                i = i+self.time_step
-                for_targets = np.reshape(close[i:i+1],(1,1))
-                targets.append(np.matrix.tolist(for_targets))
-            else:    
-                break
-        
-        inputs = np.reshape(inputs,(np.shape(inputs)[0],np.shape(inputs)[2]))
-        targets = np.reshape(targets,(np.shape(targets)[0],np.shape(targets)[2]))
-        
-        self.targets = targets
-        return inputs,targets
+    # Generator which gives yields batches for a single epoch.
+    def generate_one_epoch(self, batch_size):
+        # train_X, train_y, test_x, test_y = self.get_data()
+        num_batches = int(len(self.train_X)) // batch_size
+        if batch_size * num_batches < len(self.train_X):
+            num_batches += 1
+
+        batch_indices = range(num_batches)
+        for j in batch_indices:
+            batch_X = self.train_X[j * batch_size: (j+1) * batch_size]
+            batch_y = self.train_y[j * batch_size: (j+1) * batch_size]
+            yield  np.array( batch_X ), np.array( batch_y )
