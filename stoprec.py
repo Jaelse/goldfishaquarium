@@ -153,10 +153,10 @@ class StoPreC:
 configs = configurations.Configurations(
     input_size=1,
     time_steps=30,
-    normal_num_layers=2,
-    units_per_layer=[100,1],
+    normal_num_layers=1,
+    units_per_layer=[1],
     lstm_cells = 1,
-    lstm_units = 100,
+    lstm_units = 124,
     batch_size=10,
     init_learning_rate=0.001,
     learning_rate_decay=0.99,

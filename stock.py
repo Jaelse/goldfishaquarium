@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from googlefinance.client import get_price_data, get_prices_data, get_prices_time_data
+import rnn_configuration as con
 
 class Stock:
     def __init__(self,
@@ -52,7 +53,7 @@ class Stock:
     def get_data(self):
         print(self.param_choice)
         df = get_price_data(self.param_choice)
-
+        print(df)
         seq = np.matrix(df['Close'].values).transpose()
         seq = [float(np.array(i)) for i in seq]
 
@@ -91,3 +92,8 @@ class Stock:
             batch_X = self.train_X[j * batch_size: (j+1) * batch_size]
             batch_y = self.train_y[j * batch_size: (j+1) * batch_size]
             yield  np.array( batch_X ), np.array( batch_y )
+
+config = con.Configurations()
+st = Stock(0,4,0,config)
+
+st.get_data()
