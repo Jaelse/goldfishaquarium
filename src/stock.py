@@ -29,7 +29,7 @@ class Stock:
         intervals = [sec, minute, hour, day, month]
         intervals = [str(i) for i in intervals]
 
-        period = ["10Y", "1M", "1D"]
+        period = ["100Y", "1M", "1D"]
         # Dow Jones
         param_dji = {
             'q': ".DJI", # Stock symbol (ex: "AAPL")
@@ -56,6 +56,8 @@ class Stock:
 
         params = [param_dji, param_aapl, param_fb]
         self.param_choice = params[param_choice]
+        
+        self.get_data()
 
     def get_data(self):
         print(self.param_choice)
@@ -67,29 +69,35 @@ class Stock:
         seq = [np.array(seq[i * self.input_size: (i + 1) * self.input_size]) for i in range(len(seq) // self.input_size)]
 
         # Split into groups of `num_steps`
+
+        X = np.array([seq[i: i + self.time_step] for i in range(len(seq) - self.time_step)])
+        y = np.array([seq[i + self.time_step] for i in range(len(seq) - self.time_step)])
+
         normalize = False
-        normFactor = 1
+        normalize = True
         if normalize:
-            normFactor = np.mean(seq)
-        X = np.array([seq[i: i + self.time_step] for i in range(len(seq) - self.time_step)]) / normFactor
-        y = np.array([seq[i + self.time_step] for i in range(len(seq) - self.time_step)]) / normFactor
+            normFactorX = np.mean(X)
+            normFactory = np.mean(y)
+            X = X / normFactorX
+            y = y / normFactory
 
         train_size = len(X) - len(X)//20;
 
+
         self.train_X, self.test_X = X[:train_size], X[train_size:]
         self.train_y, self.test_y = y[:train_size], y[train_size:]
-
+        
         return self.train_X, self.train_y, self.test_X, self.test_y
 
     # Generator which gives yields batches for a single epoch.
     def generate_one_epoch(self, batch_size):
-        train_X, train_y, test_x, test_y = self.get_data()
-        num_batches = int(len(train_X)) // batch_size
-        if batch_size * num_batches < len(train_X):
+        # train_X, train_y, test_x, test_y = self.get_data()
+        num_batches = int(len(self.train_X)) // batch_size
+        if batch_size * num_batches < len(self.train_X):
             num_batches += 1
 
         batch_indices = range(num_batches)
         for j in batch_indices:
-            batch_X = train_X[j * batch_size: (j+1) * batch_size]
-            batch_y = train_y[j * batch_size: (j+1) * batch_size]
+            batch_X = self.train_X[j * batch_size: (j+1) * batch_size]
+            batch_y = self.train_y[j * batch_size: (j+1) * batch_size]
             yield  np.array( batch_X ), np.array( batch_y )

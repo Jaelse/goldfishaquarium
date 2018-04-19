@@ -74,43 +74,74 @@ class LstmRnn(object):
                 current_learning_rate = learning_rates_to_use[epoch_step]
                 self.data_set.generate_one_epoch(configs.batch_size)
 
-                # Train
-                for batch_X, batch_y in self.data_set.generate_one_epoch(configs.batch_size):
-                    train_data_feed = {
-                            inputs: batch_X,
-                            targets: batch_y,
-                            learning_rate: current_learning_rate
-                            }
-                    training_loss, _ = sess.run([loss, minimize], train_data_feed)
+                try:
+                    # Train
+                    for batch_X, batch_y in self.data_set.generate_one_epoch(configs.batch_size):
+                        train_data_feed = {
+                                inputs: batch_X,
+                                targets: batch_y,
+                                learning_rate: current_learning_rate
+                                }
+                        training_loss, _ = sess.run([loss, minimize], train_data_feed)
 
-                # Test
-                print(self.data_set.test_y)
-                print(self.data_set.test_y.shape)
-                test_loss, _pred = sess.run([loss, prediction], test_data_feed)
+                    # Test
+                    print(self.data_set.test_y.shape)
+                    test_loss, _pred = sess.run([loss, prediction], test_data_feed)
 
-                # Print Train and Test
-                # print("final prediction: "+str(_pred.shape))
-                print(np.concatenate((_pred, self.data_set.test_y), axis=1))
-                print( "epoch: %d | training loss: %f | test loss: %f" % ( epoch_step, training_loss, test_loss ) )
-            
+                    # Print Train and Test
+                    # print("final prediction: "+str(_pred.shape))
+                    print(np.concatenate((_pred, self.data_set.test_y), axis=1))
+                    print( "epoch: %d | training loss: %f | test loss: %f" % ( epoch_step, training_loss, test_loss ) )
+                except KeyboardInterrupt:
+                    print("KeyboardInterrupt")
+                    quit_option = str( input("quit?(y/n): ") )
+                    if quit_option.lower() == 'y':
+                        break;
+                    print(self.data_set.test_y.shape)
+                    print(_pred.shape)
+                    predConcat = np.concatenate(  _pred )
+                    actualConcat = np.concatenate( self.data_set.test_y )
+                    plt.plot(range(len(predConcat)), predConcat, 'r-')
+                    plt.plot(range(len(actualConcat)), actualConcat, 'b-')
+                    plt.show()
+
+            print(self.data_set.test_y.shape)
+            print(_pred.shape)
+            predConcat = np.concatenate(  _pred )
+            actualConcat = np.concatenate( self.data_set.test_y )
+            plt.plot(range(len(predConcat)), predConcat, 'r-')
+            plt.plot(range(len(actualConcat)), actualConcat, 'b-')
+            plt.show()
+
             print("Saving model to: "+self.model_path)
             saver = tf.train.Saver()
             saver.save(sess, self.model_path, global_step=configs.max_epoch)
 
 if __name__ == '__main__':
     # Rnn cofigurations
+    # configs = configurations.Configurations(
+    #         input_size=5,
+    #         time_steps=30,
+    #         num_layers=2,
+    #         lstm_units_per_cell=[128, 128],
+    #         batch_size=64,
+    #         init_learning_rate=0.001,
+    #         learning_rate_decay=0.99,
+    #         max_epoch=200
+    #         )
     configs = configurations.Configurations(
             input_size=1,
-            time_steps=3,
+            time_steps=10,
             num_layers=1,
-            lstm_units_per_cell=[10],
-            batch_size=1,
-            init_learning_rate=0.01,
+            lstm_units_per_cell=[128, 128],
+            batch_size=64,
+            init_learning_rate=0.001,
             learning_rate_decay=0.99,
             max_epoch=50
             )
     configs.init_epoch = 5
-    params = 2 # 0Dow Jones, 1Apple, 2Facebook
+
+    params = 0 # 0Dow Jones, 1Apple, 2Facebook
     intervals = 3 # 0sec, 1minute, 2hour, 3day, 4month.
     period = 0 # 0year, 1month, 2day
 
