@@ -63,8 +63,8 @@ class Stock:
         X = np.array([seq[i: i + self.time_step] for i in range(len(seq) - self.time_step)])
         y = np.array([seq[i + self.time_step] for i in range(len(seq) - self.time_step)])
 
-        normalize = False
         normalize = True
+        # normalize = False
         if normalize:
             normFactorX = np.mean(X)
             normFactory = np.mean(y)
