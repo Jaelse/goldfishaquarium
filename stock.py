@@ -3,21 +3,11 @@ import tensorflow as tf
 from googlefinance.client import get_price_data, get_prices_data, get_prices_time_data
 
 class Stock:
-    # intervals:
-    #     minute=60*60
-    #     sec=60
-    #     hour=60*60*60
-    #     day=60*60*60*24
-    #     week=60*60*60*24*7
-    #     month=60*60*60*24*30
-
     def __init__(self,
             param_choice, interval_choice, period_choice,
-            configs,
-            last_cell_states=10):
+            configs):
         self.time_step = configs.time_steps
         self.input_size = configs.input_size
-        self.last_cell_states = last_cell_states
 
         sec = 1
         minute = sec*60
