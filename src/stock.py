@@ -1,15 +1,9 @@
 import numpy as np
 import tensorflow as tf
 from googlefinance.client import get_price_data, get_prices_data, get_prices_time_data
+import requests
 
 class Stock:
-    # intervals:
-    #     minute=60*60
-    #     sec=60
-    #     hour=60*60*60
-    #     day=60*60*60*24
-    #     week=60*60*60*24*7
-    #     month=60*60*60*24*30
 
     def __init__(self,
             param_choice, interval_choice, period_choice,
@@ -60,10 +54,44 @@ class Stock:
         self.get_data()
 
     def get_data(self):
-        print(self.param_choice)
+        print ("Getting data...")
         df = get_price_data(self.param_choice)
 
-        seq = np.matrix(df['Close'].values).transpose()
+        ### Get data from alphavantage #######################################
+        symbol = "MSFT"
+        # symbol = "GOOG"
+        # symbol = ".DJI"
+
+        api_key = "W8Q9GP1SHM5OK409"
+
+        function = "TIME_SERIES_INTRADAY"
+        interval = "1min"
+        url_interday = "https://www.alphavantage.co/query?function=%s&symbol=%s&interval=%s&outputsize=full&apikey=%s" %(function, symbol, interval, api_key)
+
+        function = "TIME_SERIES_DAILY"
+        url_daily = "https://www.alphavantage.co/query?function=%s&symbol=%s&outputsize=full&apikey=%s" %(function, symbol, api_key)
+
+        # r = requests.get(url_interday)
+        r = requests.get(url_daily)
+
+        data = r.json()
+        close_list = []
+        # print(data)
+        for key in data:
+            for inner_key in data[key]:
+                record =  data[key][inner_key]
+                if isinstance(record, dict):
+                    close = record["4. close"]
+                    # print(inner_key, close)
+                    close_list.append(close)
+        close_list.reverse() # get data in ascending order.
+        self.other_input = close_list[:50]
+        # print(close_list)
+        # print(self.other_input)
+        #######################################################################
+
+        # seq = np.matrix(df['Close'].values).transpose()
+        seq = np.matrix(close_list).transpose()
         seq = [float(np.array(i)) for i in seq]
 
         seq = [np.array(seq[i * self.input_size: (i + 1) * self.input_size]) for i in range(len(seq) // self.input_size)]
@@ -73,16 +101,21 @@ class Stock:
         X = np.array([seq[i: i + self.time_step] for i in range(len(seq) - self.time_step)])
         y = np.array([seq[i + self.time_step] for i in range(len(seq) - self.time_step)])
 
-        normalize = False
+        # normalize = False
         normalize = True
+        normFactorX = np.mean(X)
+        normFactory = np.mean(y)
+        self.normFactorX = normFactorX
+        self.normFactory = normFactory
         if normalize:
-            normFactorX = np.mean(X)
-            normFactory = np.mean(y)
             X = X / normFactorX
             y = y / normFactory
+        else:
+            normFactorX = 1
+            normFactory = 1
 
         train_size = len(X) - len(X)//20;
-
+        # train_size = len(X) - self.time_step * 2;
 
         self.train_X, self.test_X = X[:train_size], X[train_size:]
         self.train_y, self.test_y = y[:train_size], y[train_size:]
