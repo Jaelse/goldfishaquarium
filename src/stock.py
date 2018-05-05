@@ -53,6 +53,35 @@ class Stock:
         
         self.get_data()
 
+    def get_current_data(self):
+        print ("Getting current data...")
+        df = get_price_data(self.param_choice)
+
+        ### Get data from alphavantage #######################################
+        symbol = "MSFT"
+        # symbol = "GOOG"
+        # symbol = ".DJI"
+
+        api_key = "W8Q9GP1SHM5OK409"
+
+        function = "TIME_SERIES_INTRADAY"
+        interval = "1min"
+        url_interday = "https://www.alphavantage.co/query?function=%s&symbol=%s&outputsize=compact&interval=%s&apikey=%s" %(function, symbol, interval, api_key)
+
+        r = requests.get(url_interday)
+
+        data = r.json()
+        close_list = []
+        # print(data)
+        for key in data:
+            for inner_key in data[key]:
+                record =  data[key][inner_key]
+                if isinstance(record, dict):
+                    close = record["4. close"]
+                    # print(inner_key, close)
+                    close_list.append(close)
+        return close_list[-1];
+
     def get_data(self):
         print ("Getting data...")
         df = get_price_data(self.param_choice)
@@ -71,8 +100,8 @@ class Stock:
         function = "TIME_SERIES_DAILY"
         url_daily = "https://www.alphavantage.co/query?function=%s&symbol=%s&outputsize=full&apikey=%s" %(function, symbol, api_key)
 
-        # r = requests.get(url_interday)
-        r = requests.get(url_daily)
+        r = requests.get(url_interday)
+        # r = requests.get(url_daily)
 
         data = r.json()
         close_list = []
