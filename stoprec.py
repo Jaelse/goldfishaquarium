@@ -93,9 +93,9 @@ class StoPreC:
 
             #  ----------- train ------------
             # Define loss and optimizer
-            self.loss_op = tf.reduce_mean(tf.square(logits - targets))
+            self.loss_op = tf.reduce_mean(tf.square(targets - logits))
             
-            optimizer = tf.train.RMSPropOptimizer(0.01)
+            optimizer = tf.train.AdamOptimizer(self.config.init_learning_rate)
         
             self.train_op = optimizer.minimize(self.loss_op)
 
@@ -182,6 +182,9 @@ class StoPreC:
 
         with tf.Session(graph = self.graph) as sess:  
             sess.run(tf.global_variables_initializer())
+            saver = tf.train.Saver()
+
+            saver.restore(sess, "./models/goldfish.ckpt")
 
             ins = self.Data.get_current_data()
             logits = sess.run(self.logits, feed_dict={self.inputs: ins})
@@ -193,10 +196,10 @@ if __name__ == '__main__':
         types="train",
         input_size=1,
         time_steps=60,
-        normal_num_layers=4,
-        units_per_layer=[60, 30, 1], 
-        lstm_cells = 2,
-        lstm_units = 124,
+        normal_num_layers=2,
+        units_per_layer=[10, 1], 
+        lstm_cells = 1,
+        lstm_units = 120,
         batch_size=10,
         init_learning_rate=0.001,
         learning_rate_decay=0.99,

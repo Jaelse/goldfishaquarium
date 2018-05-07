@@ -12,18 +12,18 @@ class DataVisualization:
 
     def __init__(self):
         self.configs = configuration.Configurations(
-            types="get_logits",
-            input_size=1,
-            time_steps=60,
-            normal_num_layers=2,
-            units_per_layer=[30,1], 
-            lstm_cells = 1,
-            lstm_units = 124,
-            batch_size=10,
-            init_learning_rate=0.001,
-            learning_rate_decay=0.99,
-            max_epoch=1000,
-            keep_prob=0.8)
+        types="get_logits",
+        input_size=1,
+        time_steps=60,
+        normal_num_layers=2,
+        units_per_layer=[10, 1], 
+        lstm_cells = 1,
+        lstm_units = 120,
+        batch_size=10,
+        init_learning_rate=0.001,
+        learning_rate_decay=0.99,
+        max_epoch=1000,
+        keep_prob=0.80)
 
         # Dataset
         self.data = stock.Stock(0,3,0,self.configs)
@@ -37,29 +37,24 @@ class DataVisualization:
 
         x,logit = self.creature.brain_work()
         self.xs = np.reshape(x, (-1))
-        self.ys = np.zeros(np.shape(self.xs)[0])
-        self.ys = np.append(self.ys, [logit[0,0]])
+        self.xs = [self.xs[np.shape(self.xs)[0]-1]]
+        print(self.xs)
+        self.ys = [logit[0,0]]
+        print(self.ys)
 
     def animate_train(self,i):
-        # graph_data = open('stock.txt','r').read()
-        # lines = graph_data.split('\n')
-        # xs = []
-        # ys = []
-        # for line in lines:
-        #     if len(line) > 1:
-        #         x, y = line.split(',')
-        #         xs.append(x)
-        #         ys.append(y)
-
-
         self.ax1.clear()
-        self.ax1.plot(range(np.shape(self.ys)[0]),self.ys)
+        
+        self.ax1.plot(range(1,np.shape(self.ys)[0]+1),self.ys)
         self.ax1.plot(range(np.shape(self.xs)[0]),self.xs)
+
+        print("input_last:" + str(self.xs[np.shape(self.xs)[0]-1]))
+        print("input_last:" + str(self.ys[np.shape(self.ys)[0]-1]))
 
         xs,logits = self.creature.get_logits()
 
         new_xs = np.reshape(xs, (-1))[self.configs.time_steps-1]
-
+        print("the new xs:"+ str(new_xs))
         self.xs = np.append(self.xs,[new_xs])
         
         self.ys = np.append(self.ys, [logits])
