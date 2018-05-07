@@ -114,7 +114,6 @@ class Stock:
                     # print(inner_key, close)
                     close_list.append(close)
         close_list.reverse() # get data in ascending order.
-        self.other_input = close_list[:50]
         # print(close_list)
         # print(self.other_input)
         #######################################################################
@@ -148,6 +147,8 @@ class Stock:
 
         self.train_X, self.test_X = X[:train_size], X[train_size:]
         self.train_y, self.test_y = y[:train_size], y[train_size:]
+
+        self.other_input = self.train_X[:1]
         
         return self.train_X, self.train_y, self.test_X, self.test_y
 

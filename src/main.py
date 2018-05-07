@@ -20,10 +20,10 @@ class LstmRnn(object):
         configs = self.configs
 
         tf.reset_default_graph()
-        lstm_graph = tf.Graph()
+        self.lstm_graph = tf.Graph()
 
-        with lstm_graph.as_default():
-            inputs = tf.placeholder(tf.float32,
+        with self.lstm_graph.as_default():
+            self.inputs = tf.placeholder(tf.float32,
                     [None, configs.time_steps, configs.input_size], name="inputs")
             targets = tf.placeholder(tf.float32,
                     [None, configs.input_size], name="outputs")
@@ -40,7 +40,7 @@ class LstmRnn(object):
                         ) ) if configs.num_layers > 1
                     else ( self._create_cell(configs.lstm_units_per_cell[0], "layer_0") )
                     )
-            val, state_ = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float32)
+            val, state_ = tf.nn.dynamic_rnn(cell, self.inputs, dtype=tf.float32)
             val = tf.transpose(val, [1, 0, 2])
 
             last =  tf.gather(val, int(val.shape[0]) - 1, name="last_lstm_output")
@@ -49,21 +49,26 @@ class LstmRnn(object):
             weight = tf.Variable(tf.truncated_normal(
                 [configs.lstm_units_per_cell[0], configs.input_size]))
             bias = tf.Variable(tf.constant(0.1, shape=[configs.input_size]))
-            prediction = tf.matmul(last, weight) + bias
+            self.prediction = tf.matmul(last, weight) + bias
 
-            loss = tf.reduce_mean(tf.square(prediction - targets))
+            # loss = tf.reduce_mean(tf.square(self.prediction - targets))
+            loss = tf.losses.mean_squared_error(targets, self.prediction)
             optimizer = tf.train.RMSPropOptimizer(learning_rate)
             minimize = optimizer.minimize(loss)
             merged_summary = tf.summary.merge_all()
 
-        with tf.Session(graph = lstm_graph) as sess:
+        with tf.Session(graph = self.lstm_graph) as sess:
             tf.global_variables_initializer().run()
 
+            writer = tf.summary.FileWriter("/tmp/goldfish_tesorboard/2", sess.graph)
+            writer.add_graph(sess.graph)
+
             test_data_feed = {
-                    inputs: self.data_set.test_X,
+                    self.inputs: self.data_set.test_X,
                     targets: self.data_set.test_y,
                     learning_rate: 0.0
                     }
+            print(self.data_set.test_X.shape)
 
             learning_rates_to_use = [
                     configs.init_learning_rate * (
@@ -78,19 +83,20 @@ class LstmRnn(object):
                     # Train
                     for batch_X, batch_y in self.data_set.generate_one_epoch(configs.batch_size):
                         train_data_feed = {
-                                inputs: batch_X,
+                                self.inputs: batch_X,
                                 targets: batch_y,
                                 learning_rate: current_learning_rate
                                 }
                         training_loss, _ = sess.run([loss, minimize], train_data_feed)
 
                     # Test
-                    print(self.data_set.test_y.shape)
-                    test_loss, _pred = sess.run([loss, prediction], test_data_feed)
+                    # print(self.data_set.test_y.shape)
+                    
+                    test_loss, _pred = sess.run([loss, self.prediction], test_data_feed)
 
                     # Print Train and Test
-                    # print("final prediction: "+str(_pred.shape))
-                    print(np.concatenate((_pred, self.data_set.test_y), axis=1))
+                    print("final prediction: "+str(_pred.shape))
+                    # print(np.concatenate((_pred, self.data_set.test_y), axis=1))
                     print( "epoch: %d | training loss: %f | test loss: %f" % ( epoch_step, training_loss, test_loss ) )
                 except KeyboardInterrupt:
                     print("KeyboardInterrupt")
@@ -99,16 +105,16 @@ class LstmRnn(object):
                         break;
                     print(self.data_set.test_y.shape)
                     print(_pred.shape)
-                    predConcat = np.concatenate(  _pred )
-                    actualConcat = np.concatenate( self.data_set.test_y )
+                    predConcat = np.concatenate(  _pred*self.data_set.normFactory )
+                    actualConcat = np.concatenate( self.data_set.test_y*self.data_set.normFactory )
                     plt.plot(range(len(predConcat)), predConcat, 'r-')
                     plt.plot(range(len(actualConcat)), actualConcat, 'b-')
                     plt.show()
 
-            print(self.data_set.test_y.shape)
-            print(_pred.shape)
-            predConcat = np.concatenate(  _pred )
-            actualConcat = np.concatenate( self.data_set.test_y )
+            # print(self.data_set.test_y.shape)
+            # print(_pred.shape)
+            predConcat = np.concatenate(  _pred*self.data_set.normFactory )
+            actualConcat = np.concatenate( self.data_set.test_y*self.data_set.normFactory )
             plt.plot(range(len(predConcat)), predConcat, 'r-')
             plt.plot(range(len(actualConcat)), actualConcat, 'b-')
             plt.show()
@@ -116,6 +122,25 @@ class LstmRnn(object):
             print("Saving model to: "+self.model_path)
             saver = tf.train.Saver()
             saver.save(sess, self.model_path, global_step=configs.max_epoch)
+
+    def predict(self, input_X):
+        with tf.Session(graph = self.lstm_graph) as sess:
+            tf.global_variables_initializer().run()
+
+            data_feed = {
+                    self.inputs: input_X,
+                    }
+
+            _pred = sess.run([self.prediction], data_feed)
+
+            # print(self.data_set.test_y.shape)
+            predConcat = _pred[0]*self.data_set.normFactory
+            normalizedInput = input_X[-1]*self.data_set.normFactory
+            print(len( normalizedInput ))
+            print(len( predConcat ))
+            plt.plot(range(50+len(predConcat)), predConcat, 'r-')
+            plt.plot(range(len(normalizedInput)), normalizedInput, 'b-')
+            plt.show()
 
 if __name__ == '__main__':
     # Rnn cofigurations
@@ -131,12 +156,12 @@ if __name__ == '__main__':
     #         )
     configs = configurations.Configurations(
             input_size=1,
-            time_steps=10,
+            time_steps=50,
             num_layers=1,
-            lstm_units_per_cell=[128, 128],
+            lstm_units_per_cell=[128],
             batch_size=64,
-            init_learning_rate=0.001,
-            learning_rate_decay=0.99,
+            init_learning_rate=0.0001,
+            learning_rate_decay=0.8,
             max_epoch=50
             )
     configs.init_epoch = 5
@@ -147,7 +172,11 @@ if __name__ == '__main__':
 
     data_set = st.Stock(params, intervals, period, configs)
 
-    Xtrain, ytrain, Xtest, ytest = data_set.get_data()
+    # data_set.get_data()
+    # print(data_set.get_current_data())
 
     rnn = LstmRnn(configs, data_set)
     rnn.build_graph()
+
+    input_X = data_set.other_input
+    rnn.predict(input_X)
