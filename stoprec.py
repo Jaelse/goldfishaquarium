@@ -158,6 +158,12 @@ class StoPreC:
                         plt.show()
                     
                     step = step + 1
+                test_pred= np.array(pred_test)
+                test_y = np.array(test_y)
+                mean_difference = ( ( test_y - test_pred  ) ).mean()
+                mean_difference = mean_difference * self.Data.normFactorX
+                print("mean difference:")
+                print(mean_difference)
 
                 plt.plot(range(len(self.Data.train_y)), self.Data.train_y*self.Data.normFactorX, 'b-')
                 plt.plot(range(len(self.Data.train_y)), pred*self.Data.normFactorX, 'r-')
