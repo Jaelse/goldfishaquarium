@@ -126,7 +126,9 @@ class StoPreC:
 
             # TODO make batches
             if self.config.type == "train":
-                for step in range(1, 100):
+                loss = 1
+                step = 1
+                while(loss > 0.0009):
 
                     try:
                         batch_x = tf.convert_to_tensor(inputs_st, tf.float64)
@@ -152,6 +154,8 @@ class StoPreC:
                         plt.plot(range(len(self.Data.train_y)), self.Data.train_y*self.Data.normFactorX, 'b-')
                         plt.plot(range(len(self.Data.train_y)), pred*self.Data.normFactorX, 'r-')
                         plt.show()
+                    
+                    step = step + 1
 
                 plt.plot(range(len(self.Data.train_y)), self.Data.train_y*self.Data.normFactorX, 'b-')
                 plt.plot(range(len(self.Data.train_y)), pred*self.Data.normFactorX, 'r-')
@@ -197,11 +201,11 @@ if __name__ == '__main__':
         input_size=1,
         time_steps=60,
         normal_num_layers=2,
-        units_per_layer=[10, 1], 
+        units_per_layer=[60, 1], 
         lstm_cells = 1,
         lstm_units = 120,
         batch_size=10,
-        init_learning_rate=0.00001,
+        init_learning_rate=0.0001,
         learning_rate_decay=0.99,
         max_epoch=1000,
         keep_prob=0.8)
