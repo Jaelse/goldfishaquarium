@@ -109,7 +109,7 @@ class StoPreC:
 
             saver = tf.train.Saver()
 
-            inputs_st,targets_st,hh,jjjj = self.Data.get_data()
+            inputs_st,targets_st,test_x,test_y = self.Data.get_data()
 
 
             # train_inputs = inputs_st[:np.shape(inputs_st)[0]-self.config.time_steps,:,:]
@@ -143,8 +143,11 @@ class StoPreC:
                                             feed_dict={self.inputs: batch_x.eval(),
                                                         targets: batch_y.eval()})
                         
+                        loss_test, pred_test= sess.run([self.loss_op, logits],
+                                            feed_dict={self.inputs: test_x,
+                                                        targets: test_y})
                         print("Step " + str(step) 
-                            + ", Batch Loss= " + str(loss))          
+                            + ", Batch Loss= " + str(loss) + " test loss="+str(loss_test))          
 
                     except KeyboardInterrupt:
                         quit_option = str(input("quit?(y/n): "))

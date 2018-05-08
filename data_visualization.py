@@ -51,20 +51,23 @@ class DataVisualization:
         self.ax1.clear()
         self.ax2.clear()
         
-        self.ax1.annotate("",
-                xy=(np.shape(self.xs)[0]-1, self.xs[-1]), xycoords='data',
-                xytext=(0.8, 0.8), textcoords='data',
-                arrowprops=dict(arrowstyle="->",
-                    connectionstyle="arc3"),
-                )
-        self.ax2.annotate("",
-                xy=(0.2, 0.2), xycoords='data',
-                xytext=(np.shape(self.ys)[0]+1, self.ys[-1]), textcoords='data',
-                arrowprops=dict(arrowstyle="->",
-                    connectionstyle="arc3"),
-                )
+        self.ax1.set_title("Real Values")
         self.ax1.plot(range(np.shape(self.xs)[0]),self.xs)
+        self.ax1.annotate(str(self.xs[-1]),
+                xy=(np.shape(self.xs)[0]-1, self.xs[-1]),  xycoords='data',
+                    xytext=(0.8, 0.95), textcoords='axes fraction',
+                    arrowprops=dict(facecolor='black', shrink=0.05),
+                    horizontalalignment='right', verticalalignment='top',
+                    )
+
+        self.ax2.set_title("Perdicted Values")
         self.ax2.plot(range(1,np.shape(self.ys)[0]+1),self.ys)
+        self.ax2.annotate(str(self.ys[-1]),
+                xy=(np.shape(self.ys)[0], self.ys[-1]),  xycoords='data',
+                    xytext=(0.8, 0.95), textcoords='axes fraction',
+                    arrowprops=dict(facecolor='black', shrink=0.05),
+                    horizontalalignment='right', verticalalignment='top',
+                    )
 
         print("input_last:" + str(self.xs[np.shape(self.xs)[0]-1]))
         print("output_last:" + str(self.ys[np.shape(self.ys)[0]-1]))
