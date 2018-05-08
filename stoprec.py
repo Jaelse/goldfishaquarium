@@ -201,7 +201,7 @@ if __name__ == '__main__':
         lstm_cells = 1,
         lstm_units = 120,
         batch_size=10,
-        init_learning_rate=0.001,
+        init_learning_rate=0.00001,
         learning_rate_decay=0.99,
         max_epoch=1000,
         keep_prob=0.8)

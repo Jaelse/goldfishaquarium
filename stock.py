@@ -59,7 +59,7 @@ class Stock:
         df = get_price_data(self.param_choice)
 
         ### Get data from alphavantage #######################################
-        symbol = "MSFT"
+        symbol = "NZ50G"
         # symbol = "GOOG"
         # symbol = ".DJI"
 
@@ -107,7 +107,7 @@ class Stock:
         df = get_price_data(self.param_choice)
 
         ### Get data from alphavantage #######################################
-        symbol = "MSFT"
+        symbol = "NZ50G"
         # symbol = "GOOG"
         # symbol = ".DJI"
 

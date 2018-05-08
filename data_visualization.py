@@ -49,7 +49,7 @@ class DataVisualization:
         self.ax1.plot(range(np.shape(self.xs)[0]),self.xs)
 
         print("input_last:" + str(self.xs[np.shape(self.xs)[0]-1]))
-        print("input_last:" + str(self.ys[np.shape(self.ys)[0]-1]))
+        print("output_last:" + str(self.ys[np.shape(self.ys)[0]-1]))
 
         xs,logits = self.creature.get_logits()
 
