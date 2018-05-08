@@ -33,7 +33,14 @@ class DataVisualization:
 
         style.use('fivethirtyeight')
         self.fig = plt.figure()
-        self.ax1 = self.fig.add_subplot(1,1,1)
+
+        self.ax1 = self.fig.add_subplot(211)
+        self.ax2 = self.fig.add_subplot(212)
+
+        # self.ax1 = self.fig.add_subplot(221)
+        # self.ax2 = self.fig.add_subplot(222)
+        # self.ax3 = self.fig.add_subplot(223)
+        # self.ax4 = self.fig.add_subplot(224)
 
         x,logit = self.creature.brain_work()
         self.xs = np.reshape(x, (-1))
@@ -42,9 +49,22 @@ class DataVisualization:
 
     def animate_train(self,i):
         self.ax1.clear()
+        self.ax2.clear()
         
-        self.ax1.plot(range(1,np.shape(self.ys)[0]+1),self.ys)
+        self.ax1.annotate("",
+                xy=(np.shape(self.xs)[0]-1, self.xs[-1]), xycoords='data',
+                xytext=(0.8, 0.8), textcoords='data',
+                arrowprops=dict(arrowstyle="->",
+                    connectionstyle="arc3"),
+                )
+        self.ax2.annotate("",
+                xy=(0.2, 0.2), xycoords='data',
+                xytext=(np.shape(self.ys)[0]+1, self.ys[-1]), textcoords='data',
+                arrowprops=dict(arrowstyle="->",
+                    connectionstyle="arc3"),
+                )
         self.ax1.plot(range(np.shape(self.xs)[0]),self.xs)
+        self.ax2.plot(range(1,np.shape(self.ys)[0]+1),self.ys)
 
         print("input_last:" + str(self.xs[np.shape(self.xs)[0]-1]))
         print("output_last:" + str(self.ys[np.shape(self.ys)[0]-1]))
