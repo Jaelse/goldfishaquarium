@@ -100,6 +100,8 @@ class Stock:
             X = X / normFactorX
         else:
             normFactorX = 1
+
+        self.normFactor = normFactorX;
         return [X]
 
     def get_data(self):

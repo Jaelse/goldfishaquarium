@@ -16,14 +16,14 @@ class DataVisualization:
         input_size=1,
         time_steps=60,
         normal_num_layers=2,
-        units_per_layer=[10, 1], 
+        units_per_layer=[60, 1], 
         lstm_cells = 1,
         lstm_units = 120,
         batch_size=10,
-        init_learning_rate=0.001,
+        init_learning_rate=0.0001,
         learning_rate_decay=0.99,
         max_epoch=1000,
-        keep_prob=0.80)
+        keep_prob=0.8)
 
         # Dataset
         self.data = stock.Stock(0,3,0,self.configs)
@@ -37,10 +37,8 @@ class DataVisualization:
 
         x,logit = self.creature.brain_work()
         self.xs = np.reshape(x, (-1))
-        self.xs = [self.xs[np.shape(self.xs)[0]-1]]
-        print(self.xs)
-        self.ys = [logit[0,0]]
-        print(self.ys)
+        self.xs = [self.xs[np.shape(self.xs)[0]-1] *self.data.normFactor ]
+        self.ys = [logit[0,0] *self.data.normFactor ]
 
     def animate_train(self,i):
         self.ax1.clear()
@@ -54,10 +52,9 @@ class DataVisualization:
         xs,logits = self.creature.get_logits()
 
         new_xs = np.reshape(xs, (-1))[self.configs.time_steps-1]
-        print("the new xs:"+ str(new_xs))
-        self.xs = np.append(self.xs,[new_xs])
+        self.xs = np.append(self.xs,[new_xs *self.data.normFactor ])
         
-        self.ys = np.append(self.ys, [logits])
+        self.ys = np.append(self.ys, [logits *self.data.normFactor ])
         
         
     def show_training(self):
