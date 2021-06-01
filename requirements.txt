@@ -25,6 +25,6 @@ six==1.11.0
 tensorboard==1.7.0
 tensorflow==1.7.0
 termcolor==1.1.0
-urllib3==1.22
+urllib3==1.26.5
 Werkzeug==0.15.3
 zope.interface==4.4.3
